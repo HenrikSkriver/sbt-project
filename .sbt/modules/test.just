@@ -2,6 +2,8 @@
 # Test recipes — unit, integration, coverage
 # ============================================================================
 
+import '../lib/common.just'
+
 # Run unit tests only
 unit:
   {{mvnw}} test -Dtest="!*IntegrationTest,!*IT"

@@ -2,6 +2,8 @@
 # Dependency management recipes
 # ============================================================================
 
+import '../lib/common.just'
+
 # Check that required tools are installed
 check:
   #!/usr/bin/env bash

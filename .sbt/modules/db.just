@@ -2,6 +2,8 @@
 # Database recipes — migrations, seeding, utilities
 # ============================================================================
 
+import '../lib/common.just'
+
 # Run Flyway migrations via Spring Boot
 migrate:
   {{mvnw}} flyway:migrate -Dflyway.configFiles=src/main/resources/db/flyway.conf

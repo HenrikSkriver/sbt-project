@@ -2,6 +2,8 @@
 # Docker recipes for Spring Boot services
 # ============================================================================
 
+import '../lib/common.just'
+
 # Build the Spring Boot Docker image using buildpacks
 build profile="prod":
   #!/usr/bin/env bash

@@ -2,6 +2,8 @@
 # Deployment recipes
 # ============================================================================
 
+import '../lib/common.just'
+
 # Deploy to a target environment
 to env="staging":
   #!/usr/bin/env bash
