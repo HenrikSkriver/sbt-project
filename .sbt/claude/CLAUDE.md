@@ -21,7 +21,6 @@ Commands are organized into modules:
 - **Database migrations** use Flyway, located in `src/main/resources/db/migration/`
 - **Test execution order**: unit → integration → contract
 - **Profiles**: `local` for development, `test` for CI, `prod` for production builds
-- **Java version**: 21 (override `java_version` in the root justfile if different)
 
 ## When Implementing New Features
 

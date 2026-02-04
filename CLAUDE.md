@@ -14,31 +14,46 @@ curl -fsSL https://raw.githubusercontent.com/HenrikSkriver/sbt-project/refs/head
 ## Repository Structure
 
 - `.sbt/` - The toolkit content that gets distributed to target projects
-  - `sbt` - Main just entry point that imports all modules
-  - `modules/*.just` - Namespaced just recipe modules (docker, db, test, deploy, deps)
-  - `lib/common.just` - Shared variables and defaults
+  - `sbt` - Main just entry point that imports modules via `mod` keyword
+  - `modules/*.just` - Self-contained recipe modules (docker, db, test, deploy, deps)
+  - `lib/common.just` - Shared variables for root-level recipes only
   - `scripts/*.py` - Python helper scripts
   - `claude/` - Claude Code integration (commands, agents, shared CLAUDE.md)
 - `install.sh` - The installer script served via raw GitHub URL
+
+## Architecture: Module Design
+
+Each module in `.sbt/modules/` is **self-contained** with its own variable definitions. This is required because `just` modules (`mod` keyword) create isolated namespaces that don't inherit variables from parent files or imports.
+
+Variables like `registry`, `mvnw`, and `project_name` are defined directly in each module that needs them. Do NOT try to import `common.just` into modules - it will cause parse-time errors.
+
+The `lib/common.just` file is only used by the root `sbt` file for root-level recipes like `version`, `bootstrap`, `ci`, and `health`.
 
 ## Testing Changes
 
 Since this is a toolkit that installs into other projects, test changes by:
 
-1. Run `just` from the repository root to verify just syntax is valid
-2. Test the install script in a fresh directory:
+1. Create a test directory inside the project:
    ```bash
-   mkdir /tmp/test-project && cd /tmp/test-project
-   SBT_REPO=HenrikSkriver/sbt-project bash /path/to/install.sh
-   just  # verify commands are available
+   mkdir .test-install && cd .test-install
+   bash ../install.sh
+   just  # verify commands list correctly
    ```
+
+2. Clean up after testing:
+   ```bash
+   rm -rf .test-install
+   ```
+
+The `.test-install` directory is already in `.gitignore`.
 
 ## Key Conventions
 
 - Just modules use namespace syntax: `just docker::build`, `just test::unit`
+- Modules are self-contained - each defines its own variables
 - Claude Code files in `.sbt/claude/` get copied to `.claude/` with `sbt-` prefix during installation
-- Variables in `lib/common.just` can be overridden by consuming projects
 - The `<!-- SBT-TOOLKIT-START -->` / `<!-- SBT-TOOLKIT-END -->` markers in CLAUDE.md control what gets replaced on upgrade
+- The generated justfile includes an explicit `default` recipe for `just --list`
 
 ## Creating Releases
 

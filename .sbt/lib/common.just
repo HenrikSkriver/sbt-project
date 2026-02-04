@@ -1,6 +1,7 @@
 # ============================================================================
-# Common variables and conventions shared across all sbt modules.
-# This file is imported (not a module) so everything here is in root scope.
+# Common variables for root-level SBT recipes.
+# This file is imported by .sbt/sbt for recipes like version, bootstrap, ci.
+# Note: Modules define their own variables (just modules are isolated namespaces).
 # ============================================================================
 
 # SBT metadata

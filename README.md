@@ -51,7 +51,6 @@ Navigate to your Spring Boot project root and run:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/HenrikSkriver/sbt-project/refs/heads/main/install.sh | bash
-           
 ```
 
 To install a specific version:
@@ -63,7 +62,7 @@ SBT_VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/HenrikSkriver/sb
 The install script will:
 
 1. Download the SBT toolkit into `.sbt/`
-2. Create a `justfile` in the project root (or tell you what to add if one exists)
+2. Create a `justfile` in the project root with a default recipe (or tell you what to add if one exists)
 3. Copy Claude Code commands and agents into `.claude/` (prefixed with `sbt-`)
 4. Append shared instructions to `CLAUDE.md`
 
@@ -71,13 +70,13 @@ The install script will:
 
 ```
 your-spring-service/
-├── justfile                          # Thin wrapper — imports SBT + your recipes
+├── justfile                          # Thin wrapper — imports SBT + default recipe
 ├── CLAUDE.md                         # Updated with SBT conventions
 │
 ├── .sbt/                             # The toolkit (installed by curl)
 │   ├── sbt                           # Just script entry point
 │   ├── .version                      # Installed version tag
-│   ├── modules/
+│   ├── modules/                      # Self-contained recipe modules
 │   │   ├── docker.just               # Container lifecycle
 │   │   ├── db.just                   # Database migrations
 │   │   ├── test.just                 # Test execution
@@ -87,7 +86,7 @@ your-spring-service/
 │   │   ├── analyze_deps.py           # Dependency analysis helper
 │   │   └── seed_data.py              # Test data seeder
 │   ├── lib/
-│   │   └── common.just               # Shared variables and defaults
+│   │   └── common.just               # Shared variables for root recipes
 │   └── claude/
 │       ├── CLAUDE.md                  # Shared project instructions
 │       ├── commands/                  # Slash command sources
@@ -187,8 +186,8 @@ command a developer would. One toolkit, two audiences.
 ## The Thin Wrapper Justfile
 
 The `justfile` created at your project root serves as a thin wrapper.
-It imports everything from SBT and is where you add **project-specific**
-recipes:
+It imports everything from SBT and includes a default recipe that lists all
+available commands:
 
 ```just
 # ============================================================================
@@ -196,15 +195,9 @@ recipes:
 # ============================================================================
 import '.sbt/sbt'
 
-# ---------------------------------------------------------------------------
-# Project-specific overrides
-# ---------------------------------------------------------------------------
-
-# Override the default registry for this service
-registry := "eu.gcr.io/payments-team"
-
-# Override Java version if this service is on an older version
-# java_version := "17"
+# List all available commands
+default:
+  @just --list
 
 # ---------------------------------------------------------------------------
 # Project-specific recipes
@@ -230,18 +223,20 @@ ones together. The developer sees a unified interface.
 
 ## Customization
 
-### Override default variables
+### Add project-specific recipes
 
-SBT defines sensible defaults in `.sbt/lib/common.just`. Override them in your
-project's root `justfile`:
+Add your own recipes to the project's `justfile` after the import. These can
+call SBT recipes as dependencies:
 
 ```just
 import '.sbt/sbt'
 
-# Overrides
-registry       := "your-registry.io/your-team"
-java_version   := "17"
-spring_profile := "dev"
+default:
+  @just --list
+
+# Your custom recipes
+local-setup: deps::check db::migrate
+  @echo "✓ Local environment ready"
 ```
 
 ### Add project-specific Claude commands
@@ -282,7 +277,19 @@ cat .sbt/.version
 This means Service A can stay on `v1.0.0` while Service B upgrades to `v2.0.0`.
 There is no global state and no version conflicts between projects.
 
-## Including Python Scripts
+## Architecture Notes
+
+### Module Design
+
+Each module in `.sbt/modules/` is self-contained with its own variable
+definitions. This is required because `just` modules (`mod` keyword) are
+isolated namespaces that don't inherit variables from parent files.
+
+Variables like `registry`, `mvnw`, and `project_name` are defined directly
+in each module that needs them. This ensures reliable parsing regardless of
+how the modules are loaded.
+
+### Python Scripts
 
 Just recipes can call Python for tasks that benefit from a real programming
 language. SBT includes example scripts in `.sbt/scripts/`. You can add your
@@ -291,10 +298,7 @@ own and call them from recipes:
 ```just
 # In a just recipe
 analyze:
-  {{python}} .sbt/scripts/analyze_deps.py
-
-# The {{python}} variable from common.just resolves to
-# "python3" on macOS/Linux and "py -3" on Windows
+  python3 .sbt/scripts/analyze_deps.py
 ```
 
 Python scripts in the bundle are useful for dependency analysis, data seeding,
@@ -315,15 +319,16 @@ parsing that would be awkward in bash.
 If you are maintaining the SBT repository itself:
 
 ```
-sbt/                           # The SBT repo
+sbt-project/                   # The SBT repo
 ├── .sbt/                      # The toolkit content that gets installed
 │   ├── sbt                    # Entry point
 │   ├── .version
-│   ├── modules/
+│   ├── modules/               # Self-contained recipe modules
 │   ├── scripts/
 │   ├── lib/
 │   └── claude/
 ├── install.sh                 # The install script (served via raw URL)
+├── CLAUDE.md                  # Instructions for working on this repo
 └── README.md                  # This file
 ```
 
@@ -346,4 +351,3 @@ Inspired by the pattern described in
 [disler/install-and-maintain](https://github.com/disler/install-and-maintain):
 deterministic scripts handle execution, agents provide oversight. The toolkit
 is a living document that executes.
-# sbt-project
