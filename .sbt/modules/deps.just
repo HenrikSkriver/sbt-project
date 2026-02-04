@@ -2,7 +2,8 @@
 # Dependency management recipes
 # ============================================================================
 
-import '../lib/common.just'
+# Variables
+mvnw := if path_exists("mvnw") == "true" { "./mvnw" } else { "mvn" }
 
 # Check that required tools are installed
 check:

@@ -2,7 +2,10 @@
 # Deployment recipes
 # ============================================================================
 
-import '../lib/common.just'
+# Variables
+registry := "ghcr.io/your-org"
+project_name := file_name(justfile_directory())
+image_tag := `git rev-parse --short HEAD 2>/dev/null || echo "dev"`
 
 # Deploy to a target environment
 to env="staging":

@@ -2,7 +2,12 @@
 # Docker recipes for Spring Boot services
 # ============================================================================
 
-import '../lib/common.just'
+# Variables (can be overridden in project's justfile)
+registry := "ghcr.io/your-org"
+project_name := file_name(justfile_directory())
+image_tag := `git rev-parse --short HEAD 2>/dev/null || echo "dev"`
+spring_profile := "local"
+mvnw := if path_exists("mvnw") == "true" { "./mvnw" } else { "mvn" }
 
 # Build the Spring Boot Docker image using buildpacks
 build profile="prod":

@@ -2,7 +2,9 @@
 # Database recipes — migrations, seeding, utilities
 # ============================================================================
 
-import '../lib/common.just'
+# Variables
+mvnw := if path_exists("mvnw") == "true" { "./mvnw" } else { "mvn" }
+python := if os() == "windows" { "py -3" } else { "python3" }
 
 # Run Flyway migrations via Spring Boot
 migrate:

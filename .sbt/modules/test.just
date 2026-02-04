@@ -2,7 +2,8 @@
 # Test recipes — unit, integration, coverage
 # ============================================================================
 
-import '../lib/common.just'
+# Variables
+mvnw := if path_exists("mvnw") == "true" { "./mvnw" } else { "mvn" }
 
 # Run unit tests only
 unit:
