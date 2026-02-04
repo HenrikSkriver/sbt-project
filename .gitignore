@@ -17,3 +17,6 @@ __pycache__/
 # Build artifacts
 target/
 *.jar
+
+# Test install directory
+.test-install/

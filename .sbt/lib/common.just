@@ -15,7 +15,7 @@ java_version  := "21"
 spring_profile := "local"
 
 # Docker defaults
-registry  := "ghcr.io/your-org"
+registry  := "ghcr.io/your-org"  # Override in your project's justfile
 image_tag := `git rev-parse --short HEAD 2>/dev/null || echo "dev"`
 
 # Maven wrapper detection

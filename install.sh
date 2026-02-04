@@ -5,10 +5,10 @@
 # Installs the SBT toolkit into the current project directory.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/your-org/sbt/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/HenrikSkriver/sbt-project/refs/heads/main/install.sh | bash
 #
 # With a pinned version:
-#   SBT_VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/your-org/sbt/main/install.sh | bash
+#   SBT_VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/HenrikSkriver/sbt-project/refs/heads/main/install.sh | bash
 #
 # ============================================================================
 set -euo pipefail
@@ -16,7 +16,7 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # Configuration — update these for your organization
 # ---------------------------------------------------------------------------
-SBT_REPO="${SBT_REPO:-your-org/sbt}"
+SBT_REPO="${SBT_REPO:-HenrikSkriver/sbt-project}"
 SBT_BRANCH="${SBT_BRANCH:-main}"
 VERSION="${SBT_VERSION:-latest}"
 INSTALL_DIR=".sbt"
@@ -50,12 +50,18 @@ command -v just  &>/dev/null || warn "just is not installed. Install it: https:/
 # ---------------------------------------------------------------------------
 # Resolve version
 # ---------------------------------------------------------------------------
+USE_BRANCH=false
 if [ "$VERSION" = "latest" ]; then
   info "Resolving latest version..."
-  VERSION=$(curl -fsSL "https://api.github.com/repos/${SBT_REPO}/releases/latest" \
-    | grep '"tag_name"' | cut -d'"' -f4) \
-    || VERSION="$SBT_BRANCH"
-  info "  → $VERSION"
+  VERSION=$(curl -fsSL "https://api.github.com/repos/${SBT_REPO}/releases/latest" 2>/dev/null \
+    | grep '"tag_name"' | cut -d'"' -f4) || true
+  if [ -z "$VERSION" ]; then
+    VERSION="$SBT_BRANCH"
+    USE_BRANCH=true
+    info "  → $VERSION (no releases found, using branch)"
+  else
+    info "  → $VERSION"
+  fi
 fi
 
 # ---------------------------------------------------------------------------
@@ -79,25 +85,42 @@ info "Installing sbt $VERSION into $INSTALL_DIR/"
 
 mkdir -p "$INSTALL_DIR"
 
-# Try tagged release tarball first, fall back to branch archive
-if curl -fsSL "https://github.com/${SBT_REPO}/archive/refs/tags/${VERSION}.tar.gz" \
-    | tar xz -C "$INSTALL_DIR" --strip-components=2 --include="*/.sbt/*" 2>/dev/null; then
-  : # success
-elif curl -fsSL "https://github.com/${SBT_REPO}/archive/refs/heads/${SBT_BRANCH}.tar.gz" \
-    | tar xz -C "$INSTALL_DIR" --strip-components=2 --include="*/.sbt/*" 2>/dev/null; then
-  warn "No release tag found. Installed from branch: $SBT_BRANCH"
-else
-  # Fallback: download the entire repo and copy .sbt/ out
+# Download and extract - use branch URL if USE_BRANCH is set, otherwise try tag first
+download_and_extract() {
+  local url="$1"
+  local tmpdir
   tmpdir=$(mktemp -d)
-  curl -fsSL "https://github.com/${SBT_REPO}/archive/refs/heads/${SBT_BRANCH}.tar.gz" \
-    | tar xz -C "$tmpdir" --strip-components=1
-  if [ -d "$tmpdir/.sbt" ]; then
-    cp -R "$tmpdir/.sbt/"* "$INSTALL_DIR/"
-  else
-    # If the repo IS the .sbt content (flat structure)
-    cp -R "$tmpdir/"* "$INSTALL_DIR/"
+
+  if curl -fsSL "$url" | tar xz -C "$tmpdir" --strip-components=1 2>/dev/null; then
+    if [ -d "$tmpdir/.sbt" ]; then
+      cp -R "$tmpdir/.sbt/"* "$INSTALL_DIR/"
+      rm -rf "$tmpdir"
+      return 0
+    fi
   fi
   rm -rf "$tmpdir"
+  return 1
+}
+
+downloaded=false
+
+if [ "$USE_BRANCH" = "true" ]; then
+  # Directly use branch URL
+  if download_and_extract "https://github.com/${SBT_REPO}/archive/refs/heads/${VERSION}.tar.gz"; then
+    downloaded=true
+  fi
+else
+  # Try tagged release first
+  if download_and_extract "https://github.com/${SBT_REPO}/archive/refs/tags/${VERSION}.tar.gz"; then
+    downloaded=true
+  elif download_and_extract "https://github.com/${SBT_REPO}/archive/refs/heads/${SBT_BRANCH}.tar.gz"; then
+    warn "Tag $VERSION not found. Installed from branch: $SBT_BRANCH"
+    downloaded=true
+  fi
+fi
+
+if [ "$downloaded" = "false" ]; then
+  fail "Failed to download sbt from ${SBT_REPO}"
 fi
 
 chmod +x "$INSTALL_DIR/sbt"
