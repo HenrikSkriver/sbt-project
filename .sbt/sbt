@@ -21,7 +21,7 @@ mod deps 'modules/deps.just'
 # ---------------------------------------------------------------------------
 
 # List all available sbt commands
-default:
+list:
   @just --justfile {{justfile()}} --list
 
 # Show the installed sbt version
