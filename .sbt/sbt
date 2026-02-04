@@ -1,0 +1,52 @@
+#!/usr/bin/env -S just --justfile
+
+# ============================================================================
+# SBT - Spring Boot Toolkit
+# A shared, versioned CLI for Spring Boot service operations.
+# Used by developers from the terminal and by Claude Code agents.
+# ============================================================================
+
+# Shared conventions and variables (merged into root scope)
+import 'lib/common.just'
+
+# Namespaced modules — each is a separate concern
+mod docker 'modules/docker.just'
+mod db 'modules/db.just'
+mod test 'modules/test.just'
+mod deploy 'modules/deploy.just'
+mod deps 'modules/deps.just'
+
+# ---------------------------------------------------------------------------
+# Root-level recipes
+# ---------------------------------------------------------------------------
+
+# List all available sbt commands
+default:
+  @just --justfile {{justfile()}} --list
+
+# Show the installed sbt version
+version:
+  @echo "sbt {{sbt_version}}"
+
+# Bootstrap the project: check deps, run migrations, verify build
+bootstrap: deps::check db::migrate
+  @echo ""
+  @echo "✓ Project bootstrapped and ready."
+
+# Run the full CI pipeline locally
+ci: test::unit test::integration docker::build
+  @echo ""
+  @echo "✓ CI pipeline passed."
+
+# Quick health check on the running service
+health port="8080":
+  #!/usr/bin/env bash
+  set -euo pipefail
+  echo "Checking health at localhost:{{port}}..."
+  if curl -sf "http://localhost:{{port}}/actuator/health" > /dev/null 2>&1; then
+    echo "✓ Service is healthy"
+    curl -s "http://localhost:{{port}}/actuator/health" | python3 -m json.tool 2>/dev/null || true
+  else
+    echo "✗ Service is not responding on port {{port}}"
+    exit 1
+  fi
