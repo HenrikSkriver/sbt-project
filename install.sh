@@ -199,37 +199,41 @@ fi
 info ""
 info "Setting up justfile..."
 
-if [ ! -f "justfile" ]; then
-  cat > justfile << 'JUSTFILE'
-# ============================================================================
-# Project justfile
-# ============================================================================
-# The SBT toolkit is imported below, providing shared recipes for
-# building, testing, deploying, and managing this Spring Boot service.
-# Add your project-specific recipes after the import.
-
-import '.sbt/sbt'
-
-# ---------------------------------------------------------------------------
-# Project-specific recipes
-# ---------------------------------------------------------------------------
-
-# Example: local development setup
-# local-setup:
-#   docker compose -f docker-compose.dev.yml up -d
-#   just db::migrate
-#   @echo "Ready for development"
-
-# Example: start the service locally
-# dev: local-setup
-#   ./mvnw spring-boot:run -Dspring-profiles.active=local
-JUSTFILE
+if [ ! -f "justfile" ] && [ ! -f "Justfile" ]; then
+  printf '%s\n' \
+    "# ============================================================================" \
+    "# Project justfile" \
+    "# ============================================================================" \
+    "# The SBT toolkit is imported below, providing shared recipes for" \
+    "# building, testing, deploying, and managing this Spring Boot service." \
+    "# Add your project-specific recipes after the import." \
+    "" \
+    "import '.sbt/sbt'" \
+    "" \
+    "# ---------------------------------------------------------------------------" \
+    "# Project-specific recipes" \
+    "# ---------------------------------------------------------------------------" \
+    "" \
+    "# Example: local development setup" \
+    "# local-setup:" \
+    "#   docker compose -f docker-compose.dev.yml up -d" \
+    "#   just db::migrate" \
+    '#   @echo "Ready for development"' \
+    "" \
+    "# Example: start the service locally" \
+    "# dev: local-setup" \
+    "#   ./mvnw spring-boot:run -Dspring-profiles.active=local" \
+    > justfile
   ok "Created justfile with sbt import"
 else
-  if grep -qF "$IMPORT_LINE" justfile; then
-    ok "justfile already imports sbt"
+  # Find existing justfile (could be justfile or Justfile)
+  existing_justfile="justfile"
+  [ -f "Justfile" ] && existing_justfile="Justfile"
+
+  if grep -qF "$IMPORT_LINE" "$existing_justfile"; then
+    ok "$existing_justfile already imports sbt"
   else
-    warn "Add this line to your justfile (ideally near the top):"
+    warn "Add this line to your $existing_justfile (ideally near the top):"
     echo ""
     echo "    $IMPORT_LINE"
     echo ""
