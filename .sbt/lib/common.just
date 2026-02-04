@@ -7,8 +7,8 @@
 sbt_version := "0.1.0"
 sbt_dir     := justfile_directory()
 
-# Project detection (inferred from the consuming project)
-project_name := file_name(justfile_directory() / "..")
+# Project detection (inferred from the consuming project's root justfile)
+project_name := file_name(justfile_directory())
 
 # Java / Spring Boot defaults (override in your project's justfile)
 java_version  := "21"
