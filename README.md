@@ -50,13 +50,14 @@ Upgrade when you're ready.
 Navigate to your Spring Boot project root and run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/your-org/sbt/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/HenrikSkriver/sbt-project/blob/main/install.sh | bash
+           
 ```
 
 To install a specific version:
 
 ```bash
-SBT_VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/your-org/sbt/main/install.sh | bash
+SBT_VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/HenrikSkriver/sbt-project/blob/main/install.sh | bash
 ```
 
 The install script will:
